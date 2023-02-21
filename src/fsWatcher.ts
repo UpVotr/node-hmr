@@ -1,4 +1,4 @@
-import { Watcher } from "./watcher";
+import { Watcher } from "./watcher.js";
 import fs from "fs";
 
 export class FSWatcher extends Watcher {

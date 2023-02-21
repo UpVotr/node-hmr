@@ -1,7 +1,7 @@
 import chalk from "chalk";
-import { HotModule, isValidHotModule } from "./exportTypes";
-import { Watcher } from "./watcher";
-import { FSWatcher } from "./fsWatcher";
+import { HotModule, isValidHotModule } from "./exportTypes.js";
+import { Watcher } from "./watcher.js";
+import { FSWatcher } from "./fsWatcher.js";
 import EventEmitter from "events";
 
 export class HMRRuntime extends EventEmitter {
