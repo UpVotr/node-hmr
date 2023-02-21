@@ -211,4 +211,11 @@ export class HMRRuntime extends EventEmitter {
   emit(eventName: "update", ...args: string[]): boolean {
     return super.emit(eventName, ...args);
   }
+
+  closeAll() {
+    for (const id in this.unwatchCache) {
+      this.unwatchCache[id]();
+      delete this.unwatchCache[id];
+    }
+  }
 }
