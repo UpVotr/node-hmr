@@ -177,7 +177,9 @@ export class HMRRuntime extends EventEmitter {
         );
         this.invalidateModule(id);
         this.cacheBustRequire(id).then((m) => {
-          this.handleModuleUpgrade(id, m);
+          this.handleModuleUpgrade(id, m).then(() => {
+            this.emit("update", id);
+          });
         });
       }
     };
@@ -194,5 +196,18 @@ export class HMRRuntime extends EventEmitter {
     delete this.moduleCache[id];
     delete this.exportCache[id];
     delete this.persistentCache[id];
+  }
+
+  on(eventName: "update", listener: (...paths: string[]) => void): this {
+    return super.on(eventName, listener);
+  }
+  off(eventName: "update", listener: (...paths: string[]) => void): this {
+    return super.off(eventName, listener);
+  }
+  once(eventName: "update", listener: (...paths: string[]) => void): this {
+    return super.once(eventName, listener);
+  }
+  emit(eventName: "update", ...args: string[]): boolean {
+    return super.emit(eventName, ...args);
   }
 }
