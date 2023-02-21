@@ -71,7 +71,9 @@ export class HMRRuntime extends EventEmitter {
       this.showEsmLeakWarn = false;
     }
     try {
-      return await import(`${id}?cacheBust=${Date.now()}`);
+      return (this._cache[id] = (
+        await import(`${id}?cacheBust=${Date.now()}`)
+      ).default);
     } catch (e) {
       console.error(
         chalk.redBright.bold(`Error in import of file ${id}:`),
@@ -92,8 +94,7 @@ export class HMRRuntime extends EventEmitter {
     if (!this._requireFn) return undefined;
     try {
       if (id in this._cache) delete this._requireFn.cache[id];
-      this._cache[id] = this._requireFn(id);
-      return this._cache[id];
+      return (this._cache[id] = this._requireFn(id));
     } catch (e) {
       console.error(
         chalk.redBright.bold(`Error in import of file ${id}:`),
@@ -151,7 +152,9 @@ export class HMRRuntime extends EventEmitter {
     }
 
     try {
-      const runReturn = m.run(this.persistentCache[id]);
+      const runReturn = m.run(this.persistentCache[id], () =>
+        this.emit("update", id)
+      );
       let exports: any;
       if (runReturn.__hmrIsPromise === true) {
         exports = await runReturn.promise;
