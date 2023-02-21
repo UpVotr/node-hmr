@@ -13,4 +13,6 @@ export abstract class Watcher extends EventEmitter {
   emit(eventName: "update", ...args: string[]): boolean {
     return super.emit(eventName, ...args);
   }
+
+  abstract watch(id: string): () => void;
 }
