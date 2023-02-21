@@ -93,7 +93,8 @@ export class HMRRuntime extends EventEmitter {
   private cacheBustCjs(id: string): any {
     if (!this._requireFn) return undefined;
     try {
-      if (id in this._cache) delete this._requireFn.cache[id];
+      if (id in this._requireFn.cache) delete this._requireFn.cache[id];
+      if (id in this._cache) delete this._cache[id];
       return (this._cache[id] = this._requireFn(id));
     } catch (e) {
       console.error(
