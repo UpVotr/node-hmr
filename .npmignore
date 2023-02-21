@@ -3,7 +3,10 @@ node_modules/
 src/
 .gitignore
 jest.config.js
+tsconfig.json
 tsconfig.*.json
 yarn-error.log
 yarn.lock
 scripts/
+examples/
+*.test.js
