@@ -151,7 +151,14 @@ export class HMRRuntime extends EventEmitter {
     }
 
     try {
-      this.exportCache[id].exports = m.run(this.persistentCache[id]);
+      const runReturn = m.run(this.persistentCache[id]);
+      let exports: any;
+      if (runReturn.__hmrIsPromise === true) {
+        exports = await runReturn.promise;
+      } else {
+        exports = runReturn;
+      }
+      this.exportCache[id].exports = exports;
     } catch (e) {
       console.error(
         chalk.redBright.bold(`Error running module ${id}:`, chalk.red(e))

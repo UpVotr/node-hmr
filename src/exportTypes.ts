@@ -13,14 +13,14 @@ export interface HotModule<P extends Record<string | symbol, any>, E> {
    * @param persistentValues - The return value of the last call of
    * {@link HotModule.getPersistentValues getPersistentValues}.
    */
-  run(persistentValues: P): E;
+  run(persistentValues: P): E | { __hmrIsPromise: true; promise: Promise<E> };
   /**
    * Responsible for removing the code that was injected by
    * {@link HotModule.run run} to prepare for the new module.
    * @param persistentValues - The return value of the last call of
    * {@link HotModule.getPersistentValues getPersistentValues}.
    */
-  cleanup(persistentValues: P, exports: E): void;
+  cleanup(persistentValues: P, exports: E): void | Promise<void>;
   /**
    * Responsible for hadnling any cleanup that is required for updating
    * persistent values when {@link updatePersistentValues updatePersistentValues}
