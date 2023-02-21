@@ -19,7 +19,7 @@ export class HMRRuntime extends EventEmitter {
   private invalidatedModules: Set<string>;
 
   constructor(
-    private watcher: Watcher = new FSWatcher(),
+    private watcher: Watcher | boolean = new FSWatcher(),
     requireFn?: NodeJS.Require
   ) {
     super();
@@ -167,7 +167,8 @@ export class HMRRuntime extends EventEmitter {
       throw new TypeError(`Invalid hot module export for import ${id}!`);
 
     await this.handleModuleUpgrade(id, m);
-    this.unwatchCache[id] = this.watcher.watch(id);
+    if (typeof this.watcher !== "boolean")
+      this.unwatchCache[id] = this.watcher.watch(id);
     const listener = (...files: string[]) => {
       if (files.includes(id)) {
         console.log(
@@ -183,7 +184,7 @@ export class HMRRuntime extends EventEmitter {
         });
       }
     };
-    this.watcher.on("update", listener);
+    if (typeof this.watcher !== "boolean") this.watcher.on("update", listener);
 
     return this.exportCache[id];
   }
