@@ -11,3 +11,8 @@ import { HMRRuntime } from "./runtime.js";
 export { Watcher, HMRRuntime, FSWatcher };
 
 export default HMRRuntime;
+
+/* --------------------------------- Utility -------------------------------- */
+import createRequire from "./createRequire.js";
+
+export { createRequire };
