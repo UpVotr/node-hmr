@@ -72,7 +72,7 @@ export class HMRRuntime extends EventEmitter {
     }
     try {
       return (this._cache[id] = (
-        await import(`${id}?cacheBust=${Date.now()}`)
+        await import(`file://${id}?cacheBust=${Date.now()}`)
       ).default);
     } catch (e) {
       console.error(
