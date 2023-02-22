@@ -6,9 +6,10 @@ export type { HotModule };
 /* --------------------------------- Classes -------------------------------- */
 import { Watcher } from "./watcher.js";
 import { FSWatcher } from "./fsWatcher.js";
+import { NoopWatcher } from "./noopWatcher.js";
 import { HMRRuntime } from "./runtime.js";
 
-export { Watcher, HMRRuntime, FSWatcher };
+export { Watcher, HMRRuntime, FSWatcher, NoopWatcher };
 
 export default HMRRuntime;
 
