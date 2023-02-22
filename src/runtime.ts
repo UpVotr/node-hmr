@@ -10,7 +10,6 @@ export class HMRRuntime extends EventEmitter {
   }
 
   private _cache: Record<string, any>;
-  private _requireFn?: NodeJS.Require;
 
   private persistentCache: Record<string, any>;
   private exportCache: Record<string, { exports: any }>;
@@ -20,11 +19,9 @@ export class HMRRuntime extends EventEmitter {
 
   constructor(
     private watcher: Watcher | boolean = new FSWatcher(),
-    requireFn?: NodeJS.Require
+    private _requireFn: NodeJS.Require
   ) {
     super();
-    this._requireFn =
-      requireFn || (typeof require !== "undefined" ? require : undefined);
     this._cache = Object.create(null);
     this.persistentCache = Object.create(null);
     this.exportCache = Object.create(null);
@@ -37,60 +34,11 @@ export class HMRRuntime extends EventEmitter {
     this.invalidatedModules.add(id);
   }
 
-  private async cacheBustRequire(id: string): Promise<any> {
+  private cacheBustRequire(id: string): any {
     if (id in this._cache && !this.invalidatedModules.has(id)) {
       return this._cache[id];
     }
     this.invalidatedModules.delete(id);
-    if (this._requireFn) {
-      try {
-        return this.cacheBustCjs(id);
-      } catch (e: any) {
-        if ("code" in e && e.code === "ERR_REQUIRE_ESM") {
-          return this.cacheBustEsm(id);
-        }
-
-        throw e;
-      }
-    } else {
-      return this.cacheBustEsm(id);
-    }
-  }
-
-  private showEsmLeakWarn = true;
-
-  private async cacheBustEsm(id: string): Promise<any> {
-    if (this.showEsmLeakWarn) {
-      console.warn(
-        chalk.yellow.bold(
-          "Cache busting using ESM modules causes " +
-            "memory leaks due to the inability to clear the cache. You may want to " +
-            "restart the process every once in a while."
-        )
-      );
-      this.showEsmLeakWarn = false;
-    }
-    try {
-      return (this._cache[id] = (
-        await import(`file://${id}?cacheBust=${Date.now()}`)
-      ).default);
-    } catch (e) {
-      console.error(
-        chalk.redBright.bold(`Error in import of file ${id}:`),
-        chalk.red(e)
-      );
-      if (id in this._cache) {
-        chalk.yellow("Using cached import.");
-        return this._cache[id];
-      }
-      console.error(
-        chalk.yellow("No cached import found, unable to continue!")
-      );
-      throw e;
-    }
-  }
-
-  private cacheBustCjs(id: string): any {
     if (!this._requireFn) return undefined;
     try {
       const resolvedPath = this._requireFn.resolve(id);
@@ -175,7 +123,7 @@ export class HMRRuntime extends EventEmitter {
   }
 
   async import<E = any>(id: string): Promise<{ exports: E | undefined }> {
-    const m = await this.cacheBustRequire(id);
+    const m = this.cacheBustRequire(id);
     if (!isValidHotModule(m))
       throw new TypeError(`Invalid hot module export for import ${id}!`);
 
@@ -190,10 +138,9 @@ export class HMRRuntime extends EventEmitter {
           )
         );
         this.invalidateModule(id);
-        this.cacheBustRequire(id).then((m) => {
-          this.handleModuleUpgrade(id, m).then(() => {
-            this.emit("update", id);
-          });
+
+        this.handleModuleUpgrade(id, this.cacheBustRequire(id)).then(() => {
+          this.emit("update", id);
         });
       }
     };

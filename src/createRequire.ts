@@ -1,17 +1,20 @@
 export default function createRequire(
   req: (id: string) => any,
-  realReq: NodeJS.Require
+  realReq: NodeJS.Require,
+  cache?: any,
+  resolve?: NodeJS.RequireResolve
 ): NodeJS.Require {
-  const cache = Object.create(null);
+  const _cache = cache || Object.create(null);
+  const _resolve = resolve || realReq.resolve;
   return Object.assign(
-    (id: string) => {
-      return cache[id] ?? (cache[id] = req(id));
-    },
+    cache
+      ? (id: string) => req(id)
+      : (id: string) => (id in _cache ? _cache[id] : (_cache[id] = req(id))),
     {
-      cache,
+      cache: _cache,
       main: realReq.main,
       extensions: realReq.extensions,
-      resolve: realReq.resolve
+      resolve: _resolve
     }
   );
 }
