@@ -1,7 +1,7 @@
 /* ---------------------------------- Types --------------------------------- */
-import { HotModule } from "./exportTypes.js";
+import { HotModule, ExportType } from "./exportTypes.js";
 
-export type { HotModule };
+export type { HotModule, ExportType };
 
 /* --------------------------------- Classes -------------------------------- */
 import { Watcher } from "./watcher.js";

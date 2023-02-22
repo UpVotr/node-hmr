@@ -34,6 +34,10 @@ export interface HotModule<P extends Record<string | symbol, any>, E> {
   cleanupPersistentValues(persistentValues: P): void | Promise<void>;
 }
 
+export type ExportType<mod extends HotModule<any, any>> = ReturnType<
+  Parameters<mod["cleanup"]>[1]
+>;
+
 export function isValidHotModule(m: any): m is HotModule<any, any> {
   return (
     [
