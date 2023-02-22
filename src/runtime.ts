@@ -93,9 +93,11 @@ export class HMRRuntime extends EventEmitter {
   private cacheBustCjs(id: string): any {
     if (!this._requireFn) return undefined;
     try {
-      if (id in this._requireFn.cache) delete this._requireFn.cache[id];
-      if (id in this._cache) delete this._cache[id];
-      return (this._cache[id] = this._requireFn(id));
+      const resolvedPath = this._requireFn.resolve(id);
+      if (resolvedPath in this._requireFn.cache)
+        delete this._requireFn.cache[resolvedPath];
+      return (this._cache[id] =
+        this._requireFn(resolvedPath) || this._cache[id]);
     } catch (e) {
       console.error(
         chalk.redBright.bold(`Error in import of file ${id}:`),

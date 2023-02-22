@@ -4,6 +4,20 @@ Hot module reloading for node.js with persistent values
 
 > A result of trying to develop Next.js applications with custom servers on a slow computer.
 
+## Installation
+
+npm
+
+```
+npm i @upvotr/node-hmr
+```
+
+yarn
+
+```
+yarn add @upvotr/node-hmr
+```
+
 ## Usage
 
 > note: This module is _not_ intended for use when changing/updating modules in `node_modules`, and will not work correctly if you attempt to.
@@ -12,9 +26,9 @@ A minimal example:
 
 ```js
 // index.js
-import HMRRuntime from "@upvotr/node-hmr";
+const { HMRRuntime, FSWatcher } = require("@upvotr/node-hmr");
 
-const runtime = new HMRRuntime();
+const runtime = new HMRRuntime(new FSWatcher(), require);
 
 async function main() {
   const a = await runtime.import("./a.js");
@@ -26,14 +40,15 @@ async function main() {
   });
 }
 
+main();
 
 // a.js
-import HMRRuntime from "@upvotr/node-hmr";
+const { HMRRuntime, FSWatcher } = require("@upvotr/node-hmr");
 
 const moduleADef = {
   getPersistentValues() {
     return {
-      runtime: new HMRruntime()
+      runtime: new HMRRuntime(new FSWatcher(), require)
     };
   },
 
@@ -58,7 +73,7 @@ const moduleADef = {
     return {
       __hmrIsPromise: true,
       promise: loadAndRun()
-    }
+    };
   },
 
   cleanup({ runtime }) {
@@ -71,8 +86,7 @@ const moduleADef = {
   }
 };
 
-export default moduleADef;
-
+module.exports = moduleADef;
 
 // b.js
 const moduleBDef = {
@@ -81,7 +95,7 @@ const moduleBDef = {
   run() {
     return {
       bar: () => console.log("baz")
-    }
+    };
   },
 
   cleanup() {},
@@ -89,14 +103,11 @@ const moduleBDef = {
   cleanupPersistentValues() {}
 };
 
-export default moduleBDef;
-
-
-// package.json
-{
-  //...
-  "type": "module"
-}
+module.exports = moduleBDef;
 ```
 
-Running `node index.js` will
+Running `node index.js` will run `main`, which listens for updates from the `a.js` file. Changing `"baz"` to a different value will automatically update the module, and it will be logged in the console again!
+
+# API
+
+> Documentation pending

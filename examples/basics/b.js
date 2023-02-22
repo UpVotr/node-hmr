@@ -12,4 +12,4 @@ const moduleBDef = {
   cleanupPersistentValues() {}
 };
 
-export default moduleBDef;
+module.exports = moduleBDef;

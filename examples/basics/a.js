@@ -1,10 +1,9 @@
-import HMRRuntime, { FSWatcher } from "@upvotr/node-hmr";
-import { createRequire } from "module";
+const { HMRRuntime, FSWatcher } = require("@upvotr/node-hmr");
 
 const moduleADef = {
   getPersistentValues() {
     return {
-      runtime: new HMRruntime(new FSWatcher(), createRequire(import.meta.url))
+      runtime: new HMRRuntime(new FSWatcher(), require)
     };
   },
 
@@ -42,4 +41,4 @@ const moduleADef = {
   }
 };
 
-export default moduleADef;
+module.exports = moduleADef;

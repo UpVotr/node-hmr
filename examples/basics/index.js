@@ -1,7 +1,6 @@
-import HMRRuntime, { FSWatcher } from "@upvotr/node-hmr";
-import { createRequire } from "module";
+const { HMRRuntime, FSWatcher } = require("@upvotr/node-hmr");
 
-const runtime = new HMRRuntime(new FSWatcher(), createRequire(import.meta.url));
+const runtime = new HMRRuntime(new FSWatcher(), require);
 
 async function main() {
   const a = await runtime.import("./a.js");
