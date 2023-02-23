@@ -117,8 +117,6 @@ export class HMRRuntime extends EventEmitter {
       console.error(
         chalk.redBright.bold(`Error running module ${id}:`, chalk.red(e))
       );
-      console.warn(chalk.yellow("Unable to continue!"));
-      throw e;
     }
   }
 
