@@ -15,6 +15,7 @@ export class HMRRuntime extends EventEmitter {
   private exportCache: Record<string, { exports: any }>;
   private moduleCache: Record<string, HotModule<any, any>>;
   private unwatchCache: Record<string, () => void>;
+  private listenerCache: Record<string, (id: string) => void>;
   private invalidatedModules: Set<string>;
 
   constructor(
@@ -27,6 +28,7 @@ export class HMRRuntime extends EventEmitter {
     this.exportCache = Object.create(null);
     this.moduleCache = Object.create(null);
     this.unwatchCache = Object.create(null);
+    this.listenerCache = Object.create(null);
     this.invalidatedModules = new Set();
   }
 
@@ -142,6 +144,7 @@ export class HMRRuntime extends EventEmitter {
         });
       }
     };
+    this.listenerCache[id] = listener;
     if (typeof this.watcher !== "boolean") this.watcher.on("update", listener);
 
     return this.exportCache[id];
@@ -149,6 +152,8 @@ export class HMRRuntime extends EventEmitter {
 
   unimport(id: string) {
     this.unwatchCache[id]?.();
+    if (typeof this.watcher !== "boolean")
+      this.watcher.off("update", this.listenerCache[id]);
     delete this.unwatchCache[id];
     delete this._cache[id];
     this.moduleCache[id]?.cleanupPersistentValues(this.persistentCache[id]);
@@ -173,6 +178,8 @@ export class HMRRuntime extends EventEmitter {
   closeAll() {
     for (const id in this.unwatchCache) {
       this.unwatchCache[id]();
+      if (typeof this.watcher !== "boolean")
+        this.watcher.off("update", this.listenerCache[id]);
       delete this.unwatchCache[id];
     }
   }
