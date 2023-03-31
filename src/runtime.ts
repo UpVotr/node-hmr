@@ -3,6 +3,7 @@ import { HotModule, isValidHotModule } from "./exportTypes.js";
 import { Watcher } from "./watcher.js";
 import { FSWatcher } from "./fsWatcher.js";
 import EventEmitter from "events";
+import { AsyncRunner } from "./runner.js";
 
 export class HMRRuntime extends EventEmitter {
   static get HMRRuntime() {
@@ -67,13 +68,13 @@ export class HMRRuntime extends EventEmitter {
   private async handleModuleUpgrade(id: string, m: HotModule<any, any>) {
     if (!(id in this.persistentCache) || m.updatePersistentValues) {
       if (m.updatePersistentValues && id in this.moduleCache) {
-        const cleanup = this.moduleCache[id].cleanupPersistentValues(
+        const cleanup = this.moduleCache[id].persist.cleanup(
           this.persistentCache[id]
         );
         if (cleanup instanceof Promise) await cleanup;
       }
 
-      const persistient = m.getPersistentValues();
+      const persistient = m.persist.generate();
       if (persistient instanceof Promise) {
         this.persistentCache[id] = await persistient;
       } else {
@@ -83,7 +84,7 @@ export class HMRRuntime extends EventEmitter {
 
     if (id in this.moduleCache) {
       try {
-        this.moduleCache[id].cleanup(
+        this.moduleCache[id].runner.clean(
           this.persistentCache[id],
           this.exportCache[id]
         );
@@ -105,14 +106,15 @@ export class HMRRuntime extends EventEmitter {
     }
 
     try {
-      const runReturn = m.run(this.persistentCache[id], () =>
-        this.emit("update", id)
-      );
+      const params = [
+        this.persistentCache[id],
+        () => this.emit("update", id)
+      ] as const;
       let exports: any;
-      if (runReturn.__hmrIsPromise === true) {
-        exports = await runReturn.promise;
+      if (m.runner instanceof AsyncRunner) {
+        exports = await m.runner.execute(...params);
       } else {
-        exports = runReturn;
+        exports = m.runner.execute(...params);
       }
       this.exportCache[id].exports = exports;
     } catch (e) {
@@ -156,7 +158,7 @@ export class HMRRuntime extends EventEmitter {
       this.watcher.off("update", this.listenerCache[id]);
     delete this.unwatchCache[id];
     delete this._cache[id];
-    this.moduleCache[id]?.cleanupPersistentValues(this.persistentCache[id]);
+    this.moduleCache[id]?.persist.cleanup(this.persistentCache[id]);
     delete this.moduleCache[id];
     delete this.exportCache[id];
     delete this.persistentCache[id];

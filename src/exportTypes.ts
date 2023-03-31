@@ -1,50 +1,24 @@
+import { PersistManager } from "./persistManager";
+import { AsyncRunner, Runner } from "./runner";
+
 export interface HotModule<P extends Record<string | symbol, any>, E> {
-  /**
-   * This code is only run on the first require, or if
-   * {@link HotModule.updatePersistentValues updatePersistentValues} is true.
-   */
-  getPersistentValues(): P | Promise<P>;
-  /**
-   * Whether or not to update persistent values.
-   */
   updatePersistentValues?: boolean;
-  /**
-   * Main body of the module. Runs after the file has been updated.
-   * @param persistentValues - The return value of the last call of
-   * {@link HotModule.getPersistentValues getPersistentValues}.
-   */
-  run(
-    persistentValues: P,
-    emitUpdate: () => void
-  ): E | { __hmrIsPromise: true; promise: Promise<E> };
-  /**
-   * Responsible for removing the code that was injected by
-   * {@link HotModule.run run} to prepare for the new module.
-   * @param persistentValues - The return value of the last call of
-   * {@link HotModule.getPersistentValues getPersistentValues}.
-   */
-  cleanup(persistentValues: P, exports: E): void | Promise<void>;
-  /**
-   * Responsible for hadnling any cleanup that is required for updating
-   * persistent values when {@link updatePersistentValues updatePersistentValues}
-   * is true.
-   * @param persistentValues - The return value of the last call of
-   * {@link HotModule.getPersistentValues getPersistentValues}.
-   */
-  cleanupPersistentValues(persistentValues: P): void | Promise<void>;
+
+  persist: PersistManager<P>;
+  runner: Runner<P, E> | AsyncRunner<P, E>;
 }
 
-export type ExportType<mod extends HotModule<any, any>> = Parameters<
-  mod["cleanup"]
->[1];
+export type ExportType<M extends HotModule<any, any>> = M["runner"] extends
+  | Runner<any, infer E>
+  | AsyncRunner<any, infer E>
+  ? E
+  : any;
 
 export function isValidHotModule(m: any): m is HotModule<any, any> {
   return (
-    [
-      "cleanup",
-      "cleanupPersistentValues",
-      "getPersistentValues",
-      "run"
-    ] as (keyof HotModule<any, any>)[]
-  ).every((ex) => ex in m);
+    "persist" in m &&
+    m.persist instanceof PersistManager &&
+    "runner" in m &&
+    (m.runner instanceof Runner || m.runner instanceof AsyncRunner)
+  );
 }

@@ -1,4 +1,6 @@
-import { HotModule } from "./exportTypes";
+import { createModule } from "./createModule";
+import { PersistManager } from "./persistManager";
+import { Runner } from "./runner";
 import { HMRRuntime } from "./runtime";
 import { Watcher } from "./watcher";
 
@@ -13,29 +15,29 @@ class TestWatcher extends Watcher {
 }
 
 describe("Modules should update automatcally", () => {
-  const module: HotModule<{}, string> = {
-    getPersistentValues() {
-      return {};
-    },
-    cleanupPersistentValues(persistentValues) {},
-    run(persistentValues) {
-      return "string 1";
-    },
-    cleanup(persistentValues, exports) {},
-    updatePersistentValues: false
-  };
+  const module = createModule(
+    new PersistManager(
+      () => ({}),
+      () => {}
+    ),
+    new Runner(
+      () => "string 1",
+      () => {}
+    ),
+    false
+  );
 
-  const module2: HotModule<{}, string> = {
-    getPersistentValues() {
-      return {};
-    },
-    cleanupPersistentValues(persistentValues) {},
-    run(persistentValues) {
-      return "string 2";
-    },
-    cleanup(persistentValues, exports) {},
-    updatePersistentValues: false
-  };
+  const module2 = createModule(
+    new PersistManager(
+      () => ({}),
+      () => {}
+    ),
+    new Runner(
+      () => "string 2",
+      () => {}
+    ),
+    false
+  );
 
   const cache = Object.create(null);
   const mockedRequire: NodeJS.Require = Object.assign(
