@@ -1,4 +1,4 @@
-export class PersistManager<P extends Record<string, any>> {
+export class PersistManager<P extends Record<string, any> = {}> {
   /**
    *
    * @param generatePersistentValues This code is only run on the first require, or if
@@ -8,10 +8,10 @@ export class PersistManager<P extends Record<string, any>> {
    * is true.
    */
   constructor(
-    private generatePersistentValues: () => Promise<P> | P,
+    private generatePersistentValues: () => Promise<P> | P = () => ({} as P),
     private cleanupPersistentValues: (
       persistentValues: P
-    ) => Promise<void> | void
+    ) => Promise<void> | void = () => {}
   ) {}
 
   generate() {

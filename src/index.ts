@@ -9,8 +9,17 @@ import { FSWatcher } from "./fsWatcher.js";
 import { NoopWatcher } from "./noopWatcher.js";
 import { HMRRuntime } from "./runtime.js";
 import { AsyncRunner, Runner } from "./runner.js";
+import { PersistManager } from "./persistManager.js";
 
-export { Watcher, HMRRuntime, FSWatcher, NoopWatcher, AsyncRunner, Runner };
+export {
+  Watcher,
+  HMRRuntime,
+  FSWatcher,
+  NoopWatcher,
+  AsyncRunner,
+  Runner,
+  PersistManager
+};
 
 export default HMRRuntime;
 

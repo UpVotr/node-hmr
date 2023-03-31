@@ -6,7 +6,10 @@ export class AsyncRunner<P extends Record<string, any>, E> {
    */
   constructor(
     private run: (persistentValues: P, emitUpdate: () => void) => Promise<E>,
-    private cleanup: (persistentValues: P, exports: E) => void | Promise<void>
+    private cleanup: (
+      persistentValues: P,
+      exports: E
+    ) => void | Promise<void> = () => {}
   ) {}
 
   execute(persistentValues: P, emitUpdate: () => void): Promise<E> {
@@ -26,7 +29,7 @@ export class Runner<P extends Record<string, any>, E> {
    */
   constructor(
     private run: (persistentValues: P, emitUpdate: () => void) => E,
-    private cleanup: (persistentValues: P, exports: E) => void
+    private cleanup: (persistentValues: P, exports: E) => void = () => {}
   ) {}
 
   execute(persistentValues: P, emitUpdate: () => void): E {
