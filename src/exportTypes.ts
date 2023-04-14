@@ -1,5 +1,5 @@
-import { PersistManager } from "./persistManager";
-import { AsyncRunner, Runner } from "./runner";
+import { PersistManager } from "./persistManager.js";
+import { AsyncRunner, Runner } from "./runner.js";
 
 export interface HotModule<P extends Record<string | symbol, any>, E> {
   updatePersistentValues?: boolean;

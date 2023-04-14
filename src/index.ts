@@ -24,7 +24,7 @@ export {
 export default HMRRuntime;
 
 /* --------------------------------- Utility -------------------------------- */
-import createRequire from "./createRequire.js";
+import { createSyntheticRequire } from "./createRequire.js";
 import { createModule } from "./createModule.js";
 
-export { createRequire, createModule };
+export { createSyntheticRequire, createModule };

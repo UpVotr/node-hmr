@@ -1,4 +1,4 @@
-export default function createRequire(
+export function createSyntheticRequire(
   req: (id: string) => any,
   realReq: NodeJS.Require,
   cache?: any,
