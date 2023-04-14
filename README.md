@@ -30,7 +30,7 @@ A minimal example:
 // index.js
 const { HMRRuntime, FSWatcher } = require("@upvotr/node-hmr");
 
-const runtime = new HMRRuntime(new FSWatcher(), require);
+const runtime = new HMRRuntime(new FSWatcher(require), require);
 
 async function main() {
   const a = await runtime.import("./a.js");
@@ -56,7 +56,7 @@ const {
 module.exports = createModule(
   new PersistManager(
     () => ({
-      runtime: new HMRRuntime(new FSWatcher(), require)
+      runtime: new HMRRuntime(new FSWatcher(require), require)
     }),
     ({ runtime }) => runtime.closeAll()
   ),
@@ -147,10 +147,70 @@ An version of `Runner` that allows you to use an `async` run function without se
 
 This class is responsible for handling pretty much everything to do with updating an HMR-enabled module.
 
+Events:
+
+- `update`
+  - Parameters: [`id` - the module that was updated]
+
 ##### `constructor(watcher: Watcher | false, require: NodeJS.Require)`
 
 - A [`Watcher`](#abstract-class-watcher) instance that manages watching for updates to modules, **_OR_** `false` to disable the watching function entirely (see [Disabling HMR for Production](#disabling-hmr-for-production)).
 - `require` - A `NodeJS.Require` function that is used to resolve module paths and handel module imports and cache. See [`createSyntheticRequire`](#createsyntheticrequirerequire-id-string--any-realrequire-nodejsrequire-cache-any-resolve-nodejsrequireresolve) for importing ESM modules.
+
+##### `async import<E = any>(id: string): Promise<{ exports: E | undefined }>`
+
+Manages importing and updating a module with the given id/path.
+
+- `id` - the path to the module to load
+- `returns` - A `Promise` that resolves with an object containing a single `exports` property, or undefined.
+
+The `exports` property of the returned object contains the return value of the module's runner. This property mutates when the module updates, so using object destructuring will prevent this update from happening. There are a couple of reasons for mutation instead of using another method such as a callback, the main one being that it makes the code a lot cleaner. Instead of needing to create a bunch of variables and update them every time, you just re-run the same exact line.
+
+For example, here's a small example of a HMR-enabled `express` server that uses the mutating `exports` property in a route handler.
+
+```js
+// server.js
+const express = require("express");
+const { HMRRuntime, FSWatcher } = require("@upvotr/node-hmr");
+
+const runtime = new HMRRuntime(new FSWatcher(require), require);
+
+async function main() {
+  const router = await runtime.import("./router.js");
+
+  const app = express();
+
+  app.use((...args) => router.exports(...args));
+}
+
+main();
+
+//router.js
+const { Router } = require("expresss");
+const { createModule, PersistManager, Runner } = require("@upvotr/node-hmr");
+
+module.exports = createModule(
+  new PersistManager(),
+  new Runner(() => {
+    const router = Router();
+
+    router.get("/ping", (req, res) => {
+      res.send("pong");
+    });
+
+    return router;
+  }),
+  false
+);
+```
+
+##### `unimport(id: string)`
+
+Closes all watchers for the given module. Should be called when an update is made to a module where the imports might change.
+
+##### `closeAll()`
+
+Closes all watchers for all modules.
 
 #### `abstract class Watcher`
 
@@ -165,7 +225,7 @@ Events:
 
 Provided watchers:
 
-- `FSWatcher` - Uses `fs.watch` to detect file change updates, with a timeout to prevent a double event (which occurs based on the os) from causing rapid updates.
+- `FSWatcher(require)` - Uses `fs.watch` to detect file change updates, with a timeout to prevent a double event (which occurs based on the os) from causing rapid updates. Must be passed the `require` function (or a synthetic require) for path resolution.
 - `NoopWatcher` - an alternative to passing `false` as the watcher option to the runtime.
 
 Example custom watcher:
@@ -301,3 +361,7 @@ const runtime = new HMRRuntime(
   require
 );
 ```
+
+## Error Handling
+
+You're never going to be perfect. Sometimes you'll have a syntax error, or some small issue you forgot to fix. However, you don't want one of these small issues to completely destroy your development process by having to pause to restart the server. This module attempts to prevent this from happening. If a module encounters an error when the runner is called, the runtime notices this error, and attemps to reinstate the module by calling a chached runner from the previous time it was imported and run without an error, and will log a warning to the console. If the module has _not_ been cached, as this was the first import, _or_ the last cached version produces an error, _then_ the runtime will throw an error.

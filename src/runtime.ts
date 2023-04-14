@@ -20,7 +20,7 @@ export class HMRRuntime extends EventEmitter {
   private invalidatedModules: Set<string>;
 
   constructor(
-    private watcher: Watcher | false = new FSWatcher(),
+    private watcher: Watcher | false,
     private _requireFn: NodeJS.Require
   ) {
     super();

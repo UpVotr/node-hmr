@@ -1,6 +1,6 @@
 {
   "name": "@upvotr/node-hmr",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Hot module reloading for node.js with persistient values",
   "main": "./build/commonjs/index.js",
   "exports": {
