@@ -10,3 +10,4 @@ yarn.lock
 scripts/
 examples/
 *.test.js
+package-lock.json

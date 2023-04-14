@@ -9,10 +9,9 @@
   },
   "types": "build/esm/index.d.ts",
   "scripts": {
-    "test": "jest",
     "build:cjs": "tsc --project tsconfig.cjs.json",
     "build:esm": "tsc --project tsconfig.esm.json",
-    "build": "yarn check-module-types && concurrently \"npm:build:cjs\" \"npm:build:esm\"",
+    "build": "npm run check-module-types && concurrently \"npm:build:cjs\" \"npm:build:esm\"",
     "check-module-types": "node ./scripts/check-module-types.js"
   },
   "repository": "https://github.com/UpVotr/node-hmr.git",
