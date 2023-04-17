@@ -97,6 +97,8 @@ module.exports = createModule(
 
 Running `node index.js` will run `main`, which listens for updates from the `a.js` file. Changing `"bar"` in `b.js` to a different value will automatically update the module, and it will be logged in the console again!
 
+for more examples, see the [`examples`](https://github.com/UpVotr/node-hmr/tree/main/examples) folder.
+
 # API
 
 #### `createModule(persist: PersistManager, runner: Runner | AsyncRunner, forceUpdate: boolean): HMRHodule`
