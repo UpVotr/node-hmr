@@ -290,20 +290,21 @@ export class ContentWatcher extends Watcher {
 This function creates a sort of mocked require function that can be used to modify imports. A great example of when you may want to use this is if you want to use this module with ESM exports. For example, if, in the example, you used `export default` and were working in a project with `"type": "module"`, the runtime would have no clue how to handle this new format, and even using the `createRequire` function provided by NodeJS's `module` module will not work, because it cannot import ESM. This is where this function comes in. Using this function, you can use a module such as `jiti` to synchronously import the modules. Example:
 
 ```ts
-import { fileURLToPath } from "url";
-import { createRequire } from "module";
-import createJITIRequire from "jiti";
-import { createSyntheticRequire } from "@upvotr/node-hmr";
+const createJITIRequire = require("jiti");
+const {
+  createSyntheticRequire,
+  HMRRuntime,
+  FSWatcher
+} = require("@upvotr/node-hmr");
 
-const realRequire = createRequire(import.meta.url);
-const jiti = createJITIRequire(fileURLToPath(import.meta.url));
+const jiti = createJITIRequire(__filename);
 const syntheticRequire = createSyntheticRequire(
-  (id: string) => jiti(id).default /* The default export is the HMRModule */,
+  (id) => jiti(id).default /* The default export is the HMRModule */,
   require,
   jiti.cache
 );
 
-const runtime = new HMRRuntime(new Watcher(), syntheticRequire);
+const runtime = new HMRRuntime(new FSWatcher(), syntheticRequire);
 
 async function main() {
   const es = await runtime.import("./esm.mjs");
@@ -324,7 +325,8 @@ export default createModule(
   new PersistManager(),
   new Runner(() => {
     return () => console.log("Running from an ES Module!");
-  })
+  }),
+  false
 );
 
 // typescript.ts
@@ -335,7 +337,8 @@ export default createModule(
   new PersistManager(),
   new Runner(() => {
     return () => console.log("Running from a TypeScript Module!" as string);
-  })
+  }),
+  false
 );
 ```
 
