@@ -181,6 +181,8 @@ async function main() {
   const app = express();
 
   app.use((...args) => router.exports(...args));
+
+  app.listen(3000);
 }
 
 main();
@@ -228,7 +230,7 @@ Provided watchers:
 - `FSWatcher(require)` - Uses `fs.watch` to detect file change updates, with a timeout to prevent a double event (which occurs based on the os) from causing rapid updates. Must be passed the `require` function (or a synthetic require) for path resolution.
 - `NoopWatcher` - an alternative to passing `false` as the watcher option to the runtime.
 
-Example custom watcher:
+Example custom watcher (TypeScript):
 
 ```ts
 import { Watcher } from "@upvotr/node-hmr";
