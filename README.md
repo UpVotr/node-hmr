@@ -303,13 +303,25 @@ const syntheticRequire = createSyntheticRequire(
 
 const runtime = new HMRRuntime(new Watcher(), syntheticRequire);
 
+async function main() {
+  const es = await runtime.import("./esm.mjs");
+  const ts = await runtime.import("./typescript.ts");
+
+  es.exports();
+  // Logs "Running from an ES Module!"
+  ts.exports();
+  // Logs "Running from a TypeScript Module!"
+}
+
+main();
+
 // esm.mjs
 import { createModule, PersistManager, Runner } from "@upvotr/node-hmr";
 
 export default createModule(
   new PersistManager(),
   new Runner(() => {
-    console.log("Running from an ES Module!");
+    return () => console.log("Running from an ES Module!");
   })
 );
 
@@ -320,7 +332,7 @@ import { createModule, PersistManager, Runner } from "@upvotr/node-hmr";
 export default createModule(
   new PersistManager(),
   new Runner(() => {
-    console.log("Running from a TypeScript Module!" as string);
+    return () => console.log("Running from a TypeScript Module!" as string);
   })
 );
 ```
