@@ -1,14 +1,21 @@
-const { HMRRuntime, FSWatcher } = require("@upvotr/node-hmr");
+const {
+  createModule,
+  PersistManager,
+  AsyncRunner,
+  HMRRuntime,
+  FSWatcher
+} = require("@upvotr/node-hmr");
 
-const moduleADef = {
-  getPersistentValues() {
-    return {
-      runtime: new HMRRuntime(new FSWatcher(), require)
-    };
-  },
-
-  run({ runtime }, emitUpdate) {
-    const loadAndRun = async () => {
+module.exports = createModule(
+  new PersistManager(
+    () => ({
+      runtime: new HMRRuntime(new FSWatcher(require), require)
+    }),
+    ({ runtime }) => runtime.closeAll()
+  ),
+  new AsyncRunner(
+    async ({ runtime }, emitUpdate) => {
+      // Import the module with a mutating `exports` property
       const b = await runtime.import("./b.js");
 
       runtime.on("update", (id) => {
@@ -23,22 +30,10 @@ const moduleADef = {
           b.exports.bar();
         }
       };
-    };
-
-    return {
-      __hmrIsPromise: true,
-      promise: loadAndRun()
-    };
-  },
-
-  cleanup({ runtime }) {
-    // Stop watching the file
-    runtime.unimport("./b.js");
-  },
-
-  cleanupPersistentValues({ runtime }) {
-    runtime.closeAll();
-  }
-};
-
-module.exports = moduleADef;
+    },
+    // Stop watching the file on cleanup, in case we are not importing it on the next run.
+    ({ runtime }) => runtime.unimport("./b.js")
+  ),
+  // Do not update persistient values
+  false
+);

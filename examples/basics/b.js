@@ -1,15 +1,7 @@
-const moduleBDef = {
-  getPersistentValues() {},
+const { createModule, PersistManager, Runner } = require("@upvotr/node-hmr");
 
-  run() {
-    return {
-      bar: () => console.log("baz")
-    };
-  },
-
-  cleanup() {},
-
-  cleanupPersistentValues() {}
-};
-
-module.exports = moduleBDef;
+module.exports = createModule(
+  new PersistManager(),
+  new Runner(() => ({ bar: () => console.log("bar") })),
+  false
+);
