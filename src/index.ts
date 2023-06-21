@@ -49,6 +49,13 @@ const createRunner = <
     ? new AsyncRunner(run as any, cleanup)
     : new Runner(run as any, cleanup)) as any;
 
+const createPersist = <P extends Record<string, any>>(
+  generatePersistentValues: () => Promise<P> | P = () => ({} as P),
+  cleanupPersistentValues: (
+    persistentValues: P
+  ) => Promise<void> | void = () => {}
+) => new PersistManager(generatePersistentValues, cleanupPersistentValues);
+
 const runtime = (require: NodeJS.Require, watcher: false | Watcher) =>
   new HMRRuntime(watcher, require);
 
@@ -58,5 +65,6 @@ export {
   hmr,
   synthetic,
   createRunner,
+  createPersist,
   runtime
 };
