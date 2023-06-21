@@ -27,4 +27,36 @@ export default HMRRuntime;
 import { createSyntheticRequire } from "./createRequire.js";
 import { createModule } from "./createModule.js";
 
-export { createSyntheticRequire, createModule };
+const hmr = createModule;
+const synthetic = createSyntheticRequire;
+
+const createRunner = <
+  P extends Record<string, any>,
+  E,
+  A extends boolean = false
+>(
+  run: (
+    persistentValues: P,
+    emitUpdate: () => void
+  ) => A extends true ? Promise<E> : E,
+  cleanup: (
+    persistentValues: P,
+    exports: E
+  ) => A extends true ? void | Promise<void> : void,
+  isAsync: A = false as A
+): A extends true ? AsyncRunner<P, E> : Runner<P, E> =>
+  (isAsync
+    ? new AsyncRunner(run as any, cleanup)
+    : new Runner(run as any, cleanup)) as any;
+
+const runtime = (require: NodeJS.Require, watcher: false | Watcher) =>
+  new HMRRuntime(watcher, require);
+
+export {
+  createSyntheticRequire,
+  createModule,
+  hmr,
+  synthetic,
+  createRunner,
+  runtime
+};

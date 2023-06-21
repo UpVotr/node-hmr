@@ -55,12 +55,11 @@ export class HMRRuntime extends EventEmitter {
         chalk.red(e)
       );
       if (id in this._cache) {
-        chalk.yellow("Using cached import.");
+        if (!HMRRuntime.shouldSuppressWarnings())
+          chalk.yellow("Using cached import.");
         return this._cache[id];
       }
-      console.error(
-        chalk.yellow("No cached import found, unable to continue!")
-      );
+      console.error(chalk.red("No cached import found, unable to continue!"));
       throw e;
     }
   }
@@ -92,7 +91,8 @@ export class HMRRuntime extends EventEmitter {
         console.error(
           chalk.redBright.bold(`Error cleaning up module ${id}:`, chalk.red(e))
         );
-        console.warn(chalk.yellow("Unable to continue!"));
+        if (!HMRRuntime.shouldSuppressWarnings())
+          console.warn(chalk.yellow("Unable to continue!"));
         throw e;
       }
     }
@@ -131,15 +131,16 @@ export class HMRRuntime extends EventEmitter {
       throw new TypeError(`Invalid hot module export for import ${id}!`);
 
     await this.handleModuleUpgrade(id, m);
-    if (typeof this.watcher !== "boolean")
+    if (typeof this.watcher !== "boolean" && !HMRRuntime.watchDisabled())
       this.unwatchCache[id] = this.watcher.watch(id);
     const listener = (...files: string[]) => {
       if (files.includes(id)) {
-        console.log(
-          chalk.blueBright(
-            `Module ${id} updated! clearing cache and updating exports...`
-          )
-        );
+        if (HMRRuntime.loggingEnabled())
+          console.log(
+            chalk.blueBright(
+              `Module ${id} updated! clearing cache and updating exports...`
+            )
+          );
         this.invalidateModule(id);
 
         this.handleModuleUpgrade(id, this.cacheBustRequire(id)).then(() => {
@@ -148,14 +149,15 @@ export class HMRRuntime extends EventEmitter {
       }
     };
     this.listenerCache[id] = listener;
-    if (typeof this.watcher !== "boolean") this.watcher.on("update", listener);
+    if (typeof this.watcher !== "boolean" && !HMRRuntime.watchDisabled())
+      this.watcher.on("update", listener);
 
     return this.exportCache[id];
   }
 
   unimport(id: string) {
     this.unwatchCache[id]?.();
-    if (typeof this.watcher !== "boolean")
+    if (typeof this.watcher !== "boolean" && !HMRRuntime.watchDisabled())
       this.watcher.off("update", this.listenerCache[id]);
     delete this.unwatchCache[id];
     delete this._cache[id];
@@ -181,9 +183,28 @@ export class HMRRuntime extends EventEmitter {
   closeAll() {
     for (const id in this.unwatchCache) {
       this.unwatchCache[id]();
-      if (typeof this.watcher !== "boolean")
+      if (typeof this.watcher !== "boolean" && !HMRRuntime.watchDisabled())
         this.watcher.off("update", this.listenerCache[id]);
       delete this.unwatchCache[id];
     }
   }
+}
+
+export namespace HMRRuntime {
+  let logging = false;
+
+  export const setLogging = (log: boolean) => void (logging = !!log);
+
+  export const loggingEnabled = () => logging;
+
+  let suppressWarn = false;
+
+  export const suppressWarnings = (warn: boolean) =>
+    void (suppressWarn = !!warn);
+
+  export const shouldSuppressWarnings = () => suppressWarnings;
+
+  let noWatch = false;
+  export const disableWatching = () => void (noWatch = true);
+  export const watchDisabled = () => noWatch;
 }
