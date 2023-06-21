@@ -2,7 +2,7 @@
 
 import { resolve } from "path";
 import HMRRuntime, { FSWatcher, Watcher, runtime as r, synthetic } from "..";
-import yargs from "yargs";
+import yargs, { boolean } from "yargs";
 import { hideBin } from "yargs/helpers";
 
 const args = yargs(hideBin(process.argv))
@@ -16,12 +16,17 @@ const args = yargs(hideBin(process.argv))
     f: {
       alias: "file",
       demandOption: true,
-      describe: "The file containing the module to run",
+      describe: "The file containing the module to run.",
       type: "string"
     },
     n: {
       alias: "noWatch",
       describe: "Completely disable watching, suitable for production runs.",
+      type: "boolean"
+    },
+    l: {
+      alias: "enableLogging",
+      describe: "Enable module update logging.",
       type: "boolean"
     }
   })
@@ -44,6 +49,10 @@ if (args.w) {
     throw new TypeError("Specified watcher file's export is not a watcher.");
 } else {
   watcher = new FSWatcher(req);
+}
+
+if (args.l) {
+  HMRRuntime.setLogging(true);
 }
 
 if (!!args.n) {
