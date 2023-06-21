@@ -31,6 +31,6 @@
     "yargs": "^17.7.2"
   },
   "bin": {
-    "hmr": "./build/bin/hmr.js"
+    "hmr": "build/commonjs/bin/hmr.js"
   }
 }
