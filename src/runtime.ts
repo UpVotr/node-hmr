@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { HotModule, isValidHotModule } from "./exportTypes.js";
+import { ExportType, HotModule, isValidHotModule } from "./exportTypes.js";
 import { Watcher } from "./watcher.js";
 import { FSWatcher } from "./fsWatcher.js";
 import EventEmitter from "events";
@@ -125,7 +125,11 @@ export class HMRRuntime extends EventEmitter {
     }
   }
 
-  async import<E = any>(id: string): Promise<{ exports: E | undefined }> {
+  async import<E = any>(
+    id: string
+  ): Promise<{
+    exports: (E extends HotModule<any, any> ? ExportType<E> : E) | undefined;
+  }> {
     const m = this.cacheBustRequire(id);
     if (!isValidHotModule(m))
       throw new TypeError(`Invalid hot module export for import ${id}!`);
