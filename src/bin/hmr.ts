@@ -33,7 +33,7 @@ const args = yargs(hideBin(process.argv))
   .help()
   .parseSync();
 
-const req = synthetic(require, require, null, (url: string) =>
+const req = synthetic(require, require, require.cache, (url: string) =>
   resolve(process.cwd(), url)
 );
 

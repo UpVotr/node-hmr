@@ -1,7 +1,6 @@
 import chalk from "chalk";
 import { ExportType, HotModule, isValidHotModule } from "./exportTypes.js";
 import { Watcher } from "./watcher.js";
-import { FSWatcher } from "./fsWatcher.js";
 import EventEmitter from "events";
 import { AsyncRunner } from "./runner.js";
 
