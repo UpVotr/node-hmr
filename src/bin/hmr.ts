@@ -29,13 +29,13 @@ const args = yargs(hideBin(process.argv))
   .parseSync();
 
 const req = synthetic(require, require, null, (url: string) =>
-  resolve(__dirname, url)
+  resolve(process.cwd(), url)
 );
 
 let watcher: Watcher;
 
 if (args.w) {
-  const watcherFile = resolve(__dirname, args.w);
+  const watcherFile = resolve(process.cwd(), args.w);
   const watcherClass = require(watcherFile);
   if (!("constructor" in watcherClass))
     throw new TypeError("Specified watcher file's export is not a class.");
