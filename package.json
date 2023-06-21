@@ -29,5 +29,8 @@
     "@types/node": "^18.14.0",
     "chalk": "4.1.0",
     "yargs": "^17.7.2"
+  },
+  "bin": {
+    "hmr": "./dist/bin/hmr.js"
   }
 }
