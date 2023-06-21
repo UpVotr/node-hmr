@@ -45,7 +45,7 @@ const createRunner = <
   ) => A extends true ? void | Promise<void> : void,
   isAsync: A = false as A
 ): A extends true ? AsyncRunner<P, E> : Runner<P, E> =>
-  (isAsync
+  (!!isAsync
     ? new AsyncRunner(run as any, cleanup)
     : new Runner(run as any, cleanup)) as any;
 

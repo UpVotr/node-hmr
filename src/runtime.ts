@@ -85,7 +85,7 @@ export class HMRRuntime extends EventEmitter {
       try {
         this.moduleCache[id].runner.clean(
           this.persistentCache[id],
-          this.exportCache[id]
+          this.exportCache[id].exports
         );
       } catch (e) {
         console.error(
