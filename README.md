@@ -57,7 +57,7 @@ const {
 module.exports = hmr(
   createPersist(
     () => ({
-      runtime: new HMRRuntime(new FSWatcher(require), require)
+      runtime: createRuntime(require)
     }),
     ({ runtime }) => runtime.closeAll()
   ),
