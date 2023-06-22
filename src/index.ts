@@ -42,7 +42,7 @@ const createRunner = <
   cleanup: (
     persistentValues: P,
     exports: E
-  ) => A extends true ? void | Promise<void> : void,
+  ) => A extends true ? void | Promise<void> : void = () => {},
   isAsync: A = false as A
 ): A extends true ? AsyncRunner<P, E> : Runner<P, E> =>
   (!!isAsync
@@ -50,14 +50,16 @@ const createRunner = <
     : new Runner(run as any, cleanup)) as any;
 
 const createPersist = <P extends Record<string, any>>(
-  generatePersistentValues: () => Promise<P> | P = () => ({} as P),
+  generatePersistentValues: () => Promise<P> | P = async () => ({} as P),
   cleanupPersistentValues: (
     persistentValues: P
   ) => Promise<void> | void = () => {}
 ) => new PersistManager(generatePersistentValues, cleanupPersistentValues);
 
-const runtime = (require: NodeJS.Require, watcher: false | Watcher) =>
-  new HMRRuntime(watcher, require);
+const createRuntime = (
+  require: NodeJS.Require,
+  watcher: false | Watcher = new FSWatcher(require)
+) => new HMRRuntime(watcher, require);
 
 export {
   createSyntheticRequire,
@@ -66,5 +68,5 @@ export {
   synthetic,
   createRunner,
   createPersist,
-  runtime
+  createRuntime
 };

@@ -134,7 +134,7 @@ export class HMRRuntime extends EventEmitter {
       throw new TypeError(`Invalid hot module export for import ${id}!`);
 
     await this.handleModuleUpgrade(id, m);
-    if (typeof this.watcher !== "boolean" && !HMRRuntime.watchDisabled())
+    if (typeof this.watcher !== "boolean" && !HMRRuntime.reloadDisabled())
       this.unwatchCache[id] = this.watcher.watch(id);
     const listener = (...files: string[]) => {
       if (files.includes(id)) {
@@ -152,7 +152,7 @@ export class HMRRuntime extends EventEmitter {
       }
     };
     this.listenerCache[id] = listener;
-    if (typeof this.watcher !== "boolean" && !HMRRuntime.watchDisabled())
+    if (typeof this.watcher !== "boolean" && !HMRRuntime.reloadDisabled())
       this.watcher.on("update", listener);
 
     return this.exportCache[id];
@@ -160,7 +160,7 @@ export class HMRRuntime extends EventEmitter {
 
   unimport(id: string) {
     this.unwatchCache[id]?.();
-    if (typeof this.watcher !== "boolean" && !HMRRuntime.watchDisabled())
+    if (typeof this.watcher !== "boolean" && !HMRRuntime.reloadDisabled())
       this.watcher.off("update", this.listenerCache[id]);
     delete this.unwatchCache[id];
     delete this._cache[id];
@@ -186,7 +186,7 @@ export class HMRRuntime extends EventEmitter {
   closeAll() {
     for (const id in this.unwatchCache) {
       this.unwatchCache[id]();
-      if (typeof this.watcher !== "boolean" && !HMRRuntime.watchDisabled())
+      if (typeof this.watcher !== "boolean" && !HMRRuntime.reloadDisabled())
         this.watcher.off("update", this.listenerCache[id]);
       delete this.unwatchCache[id];
     }
@@ -205,9 +205,9 @@ export namespace HMRRuntime {
   export const suppressWarnings = (warn: boolean) =>
     void (suppressWarn = !!warn);
 
-  export const shouldSuppressWarnings = () => suppressWarnings;
+  export const shouldSuppressWarnings = () => suppressWarn;
 
   let noWatch = false;
-  export const disableWatching = () => void (noWatch = true);
-  export const watchDisabled = () => noWatch;
+  export const disableReloading = () => void (noWatch = true);
+  export const reloadDisabled = () => noWatch;
 }

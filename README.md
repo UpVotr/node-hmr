@@ -6,6 +6,8 @@ Hot module reloading for NodeJS with persistent values.
 
 ## Installation
 
+### Warning: Do _not_ use versions `2.0.13` through `2.0.21`. They are all broken in some way.
+
 npm
 
 ```
@@ -28,9 +30,9 @@ A minimal example:
 
 ```js
 // index.js
-const { HMRRuntime, FSWatcher } = require("@upvotr/node-hmr");
+const { createRuntime } = require("@upvotr/node-hmr");
 
-const runtime = new HMRRuntime(new FSWatcher(require), require);
+const runtime = createRuntime(require);
 
 async function main() {
   const a = await runtime.import("./a.js");
@@ -46,21 +48,20 @@ main();
 
 // a.js
 const {
-  createModule,
-  PersistManager,
-  AsyncRunner,
-  HMRRuntime,
-  FSWatcher
+  hmr,
+  createPersist,
+  createRunner,
+  createRuntime
 } = require("@upvotr/node-hmr");
 
-module.exports = createModule(
-  new PersistManager(
+module.exports = hmr(
+  createPersist(
     () => ({
       runtime: new HMRRuntime(new FSWatcher(require), require)
     }),
     ({ runtime }) => runtime.closeAll()
   ),
-  new AsyncRunner(
+  createRunner(
     async ({ runtime }, emitUpdate) => {
       // Import the module with a mutating `exports` property
       const b = await runtime.import("./b.js");
@@ -79,19 +80,18 @@ module.exports = createModule(
       };
     },
     // Stop watching the file on cleanup, in case we are not importing it on the next run.
-    ({ runtime }) => runtime.unimport("./b.js")
-  ),
-  // Do not update persistient values
-  false
+    ({ runtime }) => runtime.unimport("./b.js"),
+    // Mark it as an AsyncRunner
+    true
+  )
 );
 
 // b.js
-const { createModule, PersistManager, Runner } = require("@upvotr/node-hmr");
+const { hmr, createRunner } = require("@upvotr/node-hmr");
 
-module.exports = createModule(
-  new PersistManager(),
-  new Runner(() => ({ bar: () => console.log("bar") })),
-  false
+module.exports = hmr(
+  null,
+  createRunner(() => ({ bar: () => console.log("bar") }))
 );
 ```
 
@@ -150,14 +150,32 @@ The basic steps that are taken when a module is imported by the runtime are as f
 
 # API
 
-#### `createModule(persist: PersistManager, runner: Runner | AsyncRunner, forceUpdate: boolean): HMRHodule`
+#### `createModule(persist: PersistManager | null, runner: Runner | AsyncRunner, forceUpdate: boolean = false): HMRHodule` (alias: `hmr`)
 
 The main way of creating an HMR-compatiable module. (You can still create the module definition object directly, see [HMRModule](#interface-hmrmodule))
 
-- `persist` - A [`PersistManager`](#class-persistmanager) instance to manage persistient values that are costly to recreate or should not change such as runtimes, web servers, or compilers.
-- `runner` - A [`Runner`](#class-runnerp-extends-recordstring-any-e) or [`AsyncRunner`](#class-asyncrunnerp-extends-recordstring-any-e) instance that handles the main module logic, including importing other HMR-enabled modules.
+- `persist` - A [`PersistManager`](#class-persistmanager) instance to manage persistient values that are costly to recreate or should not change such as runtimes, web servers, or compilers. Use `null` if you do not need persistient values. **See [`createPersist`](#createpersistgenerate-generate---p--promisep-cleanup-values-p--void--promisevoid)**.
+- `runner` - A [`Runner`](#class-runnerp-extends-recordstring-any-e) or [`AsyncRunner`](#class-asyncrunnerp-extends-recordstring-any-e) instance that handles the main module logic, including importing other HMR-enabled modules. **See [`createRunner`](#createrunnerp-extends-recordstring-any-e-a-extends-boolean--falserun-persistentvalues-p-emitupdate---void--a-extends-true--promisee--e-cleanup-persistentvalues-p-exports-e--a-extends-true--void--promisevoid--void-----isasync-a--false-a-extends-true--asyncrunnerp-e--runnerp-e)**.
+
+#### `createPersist(generate?: generate?: () => P | Promise<P>, cleanup?: (values: P) => void | Promise<void>)`
+
+A simple function that creates a new `PersistManager`. Intended to make modules less verbose.
+
+#### `createRunner<P extends Record<string, any>, E, A extends boolean = false>(run: (persistentValues: P, emitUpdate: () => void) => A extends true ? Promise<E> : E, cleanup: (persistentValues: P, exports: E) => A extends true ? void | Promise<void> : void = () => {}, isAsync: A = false): A extends true ? AsyncRunner<P, E> : Runner<P, E>`
+
+<details style="opacity:0.5;user-select: none;">
+<summary>Author's note</summary>
+Oh boy, that's a nasty function signature.
+</details>
+A simple function that creates a new `Runner` or `AsyncRunner`. Intended to make modules less verbose, and consistient in format.
+
+#### `createRuntime(require: NodeJS.Require, watcher: false | Watcher = new FSWatcher(require)): HMRruntime`
+
+Simple wrapper around creating a new [`HMRRuntime`](#class-hmrruntime). (Arguments are intentionally switched as it makes more sense).
 
 #### `class PersistManager<P extends Record<string, any>>`
+
+> Prefer using [`createPersist`](#createpersistgenerate-generate---p--promisep-cleanup-values-p--void--promisevoid)
 
 Responsible for managing persistient values. Only values that should not be expected to change or use large amounts of resources to recreate should be used in this class. For example, if you are importing other HMR-enabled modules, you would want to give your `HMRRuntime` to this class, since it should not be changed, but you most likely do not want to call `HMRRuntime.import` here.
 
@@ -176,6 +194,8 @@ Simply calls the passed `cleanup` function.
 
 #### `class Runner<P extends Record<string, any>, E>`
 
+> Prefer using [`createRunner`](#createrunnerp-extends-recordstring-any-e-a-extends-boolean--falserun-persistentvalues-p-emitupdate---void--a-extends-true--promisee--e-cleanup-persistentvalues-p-exports-e--a-extends-true--void--promisevoid--void-----isasync-a--false-a-extends-true--asyncrunnerp-e--runnerp-e)
+
 Responsible for managing any non-persistient values and generating the module's exports value.
 
 ##### `constructor(run: (persistientValues: P, emitUpdate: () => void) => E, cleanup?: (persistientValues: P, exports: E) => void)`
@@ -187,6 +207,8 @@ Responsible for managing any non-persistient values and generating the module's 
 
 #### `class AsyncRunner<P extends Record<string, any>, E>`
 
+> Prefer using [`createRunner`](#createrunnerp-extends-recordstring-any-e-a-extends-boolean--falserun-persistentvalues-p-emitupdate---void--a-extends-true--promisee--e-cleanup-persistentvalues-p-exports-e--a-extends-true--void--promisevoid--void-----isasync-a--false-a-extends-true--asyncrunnerp-e--runnerp-e)
+
 An version of `Runner` that allows you to use an `async` run function without setting the module's exports to a promise. Especially useful when importing other HMR-enabled modules inside the `run` function.
 
 ##### `constructor(run: (persistientValues: P, emitUpdate: () => void) => Promise<E>, cleanup?: (persistientValues: P, exports: E) => void | Promise<void>)`
@@ -195,6 +217,8 @@ An version of `Runner` that allows you to use an `async` run function without se
 - `cleanup` - Again, exactly the same as in the `Runner` class, but if it returns a `Promise` the runtime will wait for it to resolve before calling the `run` function of the updated module.
 
 #### `class HMRRuntime`
+
+> Prefer using [`createRuntime`](#createruntimerequire-nodejsrequire-watcher-false--watcher--new-fswatcherrequire-hmrruntime)
 
 This class is responsible for handling pretty much everything to do with updating an HMR-enabled module.
 
@@ -240,11 +264,11 @@ main();
 
 //router.js
 const { Router } = require("expresss");
-const { createModule, PersistManager, Runner } = require("@upvotr/node-hmr");
+const { hmr, createRunner } = require("@upvotr/node-hmr");
 
-module.exports = createModule(
-  new PersistManager(),
-  new Runner(() => {
+module.exports = hmr(
+  null,
+  createRunner(() => {
     const router = Router();
 
     router.get("/ping", (req, res) => {
@@ -268,6 +292,8 @@ Closes all watchers for all modules.
 #### `abstract class Watcher`
 
 Base class definition for watching modules for changes.
+
+- `constructor(require: NodeJS.Require)` - All sub-classes _should_ match this constructor pattern. Technically this can't be _forced_ but it is a pattern that is beneficial to keep. See the [CLI option](#cli-options) `-w`/`--watcher`. The passed require function `should really` only be used for resolving paths via `require.resolve`.
 
 - `abstract watch(id: string): () => void` - The only method used in this class. The value of `id` is the resolved module path used for indexing the require cache. Must return a function that takes no parameters and ends teh watching process.
 
@@ -332,7 +358,7 @@ export class ContentWatcher extends Watcher {
 }
 ```
 
-#### `createSyntheticRequire(require: (id: string) => any, realRequire: NodeJS.Require, cache?: any, resolve?: NodeJS.RequireResolve)`
+#### `createSyntheticRequire(require: (id: string) => any, realRequire: NodeJS.Require, cache?: any, resolve?: NodeJS.RequireResolve)` (alias: `synthetic`)
 
 > Warning: This is an _experimental_ feature that may be removed in future versions, or completely overhauled.
 
@@ -340,20 +366,16 @@ This function creates a sort of mocked require function that can be used to modi
 
 ```ts
 const createJITIRequire = require("jiti");
-const {
-  createSyntheticRequire,
-  HMRRuntime,
-  FSWatcher
-} = require("@upvotr/node-hmr");
+const { synthetic, createRuntime } = require("@upvotr/node-hmr");
 
 const jiti = createJITIRequire(__filename);
-const syntheticRequire = createSyntheticRequire(
+const syntheticRequire = synthetic(
   (id) => jiti(id).default /* The default export is the HMRModule */,
   require,
   jiti.cache
 );
 
-const runtime = new HMRRuntime(new FSWatcher(), syntheticRequire);
+const runtime = createRuntime(syntheticRequire);
 
 async function main() {
   const es = await runtime.import("./esm.mjs");
@@ -368,34 +390,40 @@ async function main() {
 main();
 
 // esm.mjs
-import { createModule, PersistManager, Runner } from "@upvotr/node-hmr";
+import { hmr, createRunner } from "@upvotr/node-hmr";
 
-export default createModule(
-  new PersistManager(),
-  new Runner(() => {
+export default hmr(
+  null,
+  createRunner(() => {
     return () => console.log("Running from an ES Module!");
-  }),
-  false
+  })
 );
 
 // typescript.ts
 // Thanks to jiti, you can import typescript files, too!
-import { createModule, PersistManager, Runner } from "@upvotr/node-hmr";
+import { hmr, createRunner } from "@upvotr/node-hmr";
 
-export default createModule(
-  new PersistManager(),
-  new Runner(() => {
+export default hmr(
+  null,
+  createRunner(() => {
     return () => console.log("Running from a TypeScript Module!" as string);
   }),
   false
 );
 ```
 
+## Logging
+
+Prior to version 3.0, all logging (little though there really is) was enabled forcefully. However, in 3.0 this has been changed.
+
+Module update logging has been disabled by default. You can toggle it globally using `HMRRuntime.setLogging(log: boolean)`.
+Module update warnings are enabled by default, but can be suppressed globally using `HMRRuntime.suppressWarnings(warn: boolean)`.
+
 ## Types
 
 > A note on usage with TypeScript:
 >
-> TypeScript does not automatically detect a module's type when using `module.exports = createModule(...)`. To enable type inferencing and the `ExportType` type, use `export = createModule(...)` instead, or see [`createSyntheticRequire`](#createsyntheticrequirerequire-id-string--any-realrequire-nodejsrequire-cache-any-resolve-nodejsrequireresolve) to use `export default`.
+> TypeScript does not automatically detect a module's type when using `module.exports = hmr(...)`. To enable type inferencing and the `ExportType` type, use `export = hmr(...)` instead, or see [`createSyntheticRequire`](#createsyntheticrequirerequire-id-string--any-realrequire-nodejsrequire-cache-any-resolve-nodejsrequireresolve) to use `export default`.
 
 #### `interface HMRModule`
 
@@ -418,17 +446,80 @@ const mod = await runtime.import<ExportType<typeof import("./path/to/module")>>(
 );
 ```
 
+##### Note: As of version 3.0, the types are set up to automatically detect `HMRModule`s and use `ExportType` automatically.
+
+As such, the following works just as well, if not better:
+
+```ts
+const mod = await runtime.import<typeof import("./path/to/module")>(
+  "./path/to/module"
+);
+```
+
+## CLI
+
+Version 3.0 comes with a brand-new CLI feature! It was designed to elimnate the previous requirement of having a small entry file that did something similar to the following:
+
+```js
+import { createRuntime } from "@upvotr/node-hmr";
+
+createRuntime(require).import("./real-entry.js");
+```
+
+Usage:
+
+```
+hmr [options]
+```
+
+### CLI Options
+
+- `-w`, `--watcher`
+  - Path to a module containing a `Watcher` class, which the CLI will use for the runtime. If no runtime is specefied, the provided `FSWatcher` is used. The constructor is passed a single argument: The synthetic `require` that is generated by the cli. See [`Watcher`](#abstract-class-watcher).
+- `-n`, `--noWatch`
+  - Disable module watching/reloading. Useful for running in production environments.
+- `-l`, `--enableLogging`
+  - Enble module update logging.
+- `-s`, `--suppressWarnings`
+  - Suppress warning output.
+- `-r`, `--require`
+  - Path to a module containing a custom `require` function. The file _must_ be a CommonJS module. Note that the CLI will create a synthetic require from this function, replasing the `resolve` function. This can be used with `createSyntheticRequire`, external require functions such as `jiti`, or `require` hooks such as `@babel/register`. When using `require` hooks, simply re-export the tapped function:
+    ```js
+    require("@babel/register")({
+      // configuration here
+    });
+    module.exports = require;
+    ```
+- `-f`, `--file`
+  - Path to the HMR module to run.
+
 ## Disabling HMR for Production
 
-HMR is extremely useful for development, but in production builds it is an unnecessary use of resources. This module was designed with this in mind, and there are two ways to disable it: Either pass `false` for the `watcher` parameter for each runtime (reccomended), or use the provided `NoopWatcher` watcher. Example:
+HMR is extremely useful for development, but in production builds it is an unnecessary use of resources. This module was designed with this in mind!
+
+### 2.0+ methods (still supported):
+
+There are two ways to disable it: Either pass `false` for the `watcher` parameter for each runtime (reccomended), or use the provided `NoopWatcher` watcher. Example:
 
 ```js
 // Because the `&&` operator returns either the first falsy value or the last value, this will evaluate to `false` if `NODE_ENV` is anything but "development", and will return a watcher otherwise.
-const runtime = new HMRRuntime(
-  process.env.NODE_ENV === "development" && new Watcher(),
-  require
+const runtime = new createRuntime(
+  require,
+  process.env.NODE_ENV === "development" && new Watcher()
 );
 ```
+
+### 3.0+ version
+
+Disabling module reloading can now be done globally in version 3. Simply call the `HMRRuntime.disableReloading` function. Note that this cannot be undone at runtime.
+
+```js
+if (process.env.NODE_ENV === "production") HMRRuntime.disableReloading();
+```
+
+### With the CLI
+
+Disabling HMR is even simpler with the CLI added in vresion 3.0. Simply add the `-n` or `--noWatch` flag!
 
 ## Error Handling
 

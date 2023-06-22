@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 
 import { resolve } from "path";
-import HMRRuntime, { FSWatcher, Watcher, runtime as r, synthetic } from "..";
-import yargs, { boolean } from "yargs";
+import HMRRuntime, {
+  FSWatcher,
+  Watcher,
+  createRuntime as r,
+  synthetic
+} from "..";
+import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 
 const args = yargs(hideBin(process.argv))
@@ -27,6 +32,11 @@ const args = yargs(hideBin(process.argv))
     l: {
       alias: "enableLogging",
       describe: "Enable module update logging.",
+      type: "boolean"
+    },
+    s: {
+      alias: "suppressWarnings",
+      describe: "Suppress module update warnings.",
       type: "boolean"
     },
     r: {
@@ -65,8 +75,12 @@ if (args.l) {
   HMRRuntime.setLogging(true);
 }
 
+if (args.s) {
+  HMRRuntime.suppressWarnings(true);
+}
+
 if (!!args.n) {
-  HMRRuntime.disableWatching();
+  HMRRuntime.disableReloading();
 }
 
 r(req, watcher).import(args.f);
