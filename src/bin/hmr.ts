@@ -28,12 +28,22 @@ const args = yargs(hideBin(process.argv))
       alias: "enableLogging",
       describe: "Enable module update logging.",
       type: "boolean"
+    },
+    r: {
+      alias: "require",
+      describe: "Path to a file with a default export of a NodeJS.Require.",
+      type: "string"
     }
   })
   .help()
   .parseSync();
 
-const req = synthetic(require, require, require.cache, (url: string) =>
+const requireFn = args.r ? require(resolve(process.cwd(), args.r)) : require;
+
+if (typeof requireFn !== "function")
+  throw new TypeError("Invalid require function passed.");
+
+const req = synthetic(requireFn, requireFn, requireFn.cache, (url: string) =>
   resolve(process.cwd(), url)
 );
 
@@ -41,7 +51,7 @@ let watcher: Watcher;
 
 if (args.w) {
   const watcherFile = resolve(process.cwd(), args.w);
-  const watcherClass = require(watcherFile);
+  const watcherClass = req(watcherFile);
   if (!("constructor" in watcherClass))
     throw new TypeError("Specified watcher file's export is not a class.");
   watcher = new watcherClass(req);
