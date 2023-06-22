@@ -1,20 +1,19 @@
 const express = require("express");
 const { Router } = express;
 const {
-  HMRRuntime,
-  createModule,
-  PersistManager,
-  AsyncRunner,
-  FSWatcher
+  hmr,
+  createPersist,
+  createRunner,
+  createRuntime
 } = require("@upvotr/node-hmr");
 
-module.exports = createModule(
-  new PersistManager(
+module.exports = hmr(
+  createPersist(
     () => {
       const app = express();
       const server = app.listen(3000);
       return {
-        runtime: new HMRRuntime(new FSWatcher(require), require),
+        runtime: createRuntime(require),
         app,
         server
       };
@@ -24,7 +23,7 @@ module.exports = createModule(
       server.close();
     }
   ),
-  new AsyncRunner(
+  createRunner(
     async ({ runtime, app }) => {
       const router = Router();
       const foo = await runtime.import("./routes/foo.js");
@@ -44,7 +43,7 @@ module.exports = createModule(
       runtime.unimport("./routes/bar.js");
       // This clears all of the listeners on the app so that we can reinstate them on an update
       app._router.stack = [];
-    }
-  ),
-  false
+    },
+    true
+  )
 );

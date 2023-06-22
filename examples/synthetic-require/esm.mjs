@@ -1,9 +1,8 @@
-import { createModule, PersistManager, Runner } from "@upvotr/node-hmr";
+import { createRunner, hmr } from "@upvotr/node-hmr";
 
-export default createModule(
-  new PersistManager(),
-  new Runner(() => {
+export default hmr(
+  null,
+  createRunner(() => {
     return () => console.log("Running from an ES Module!");
-  }),
-  false
+  })
 );

@@ -1,18 +1,14 @@
 const createJITIRequire = require("jiti");
-const {
-  createSyntheticRequire,
-  HMRRuntime,
-  FSWatcher
-} = require("@upvotr/node-hmr");
+const { synthetic, createRuntime } = require("@upvotr/node-hmr");
 
 const jiti = createJITIRequire(__filename);
-const syntheticRequire = createSyntheticRequire(
+const syntheticRequire = synthetic(
   (id) => jiti(id).default /* The default export is the HMRModule */,
   require,
   jiti.cache
 );
 
-const runtime = new HMRRuntime(new FSWatcher(require), syntheticRequire);
+const runtime = createRuntime(syntheticRequire);
 
 async function main() {
   const es = await runtime.import("./esm.mjs");
@@ -23,10 +19,10 @@ async function main() {
     ts.exports();
   });
 
-  es.exports();
   // Logs "Running from an ES Module!"
-  ts.exports();
+  es.exports();
   // Logs "Running from a TypeScript Module!"
+  ts.exports();
 }
 
 main();

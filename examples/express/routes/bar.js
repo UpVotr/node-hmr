@@ -1,9 +1,9 @@
 const { Router } = require("express");
-const { createModule, PersistManager, Runner } = require("@upvotr/node-hmr");
+const { hmr, createRunner } = require("@upvotr/node-hmr");
 
-module.exports = createModule(
-  new PersistManager(),
-  new Runner(() => {
+module.exports = hmr(
+  null,
+  createRunner(() => {
     const router = Router();
 
     router.get("/", (req, res) => {
@@ -11,6 +11,5 @@ module.exports = createModule(
     });
 
     return router;
-  }),
-  false
+  })
 );

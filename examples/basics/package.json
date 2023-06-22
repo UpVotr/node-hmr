@@ -11,6 +11,6 @@
   "license": "MIT",
   "type": "commonjs",
   "dependencies": {
-    "@upvotr/node-hmr": "file:../.."
+    "@upvotr/node-hmr": "^3.0.1"
   }
 }

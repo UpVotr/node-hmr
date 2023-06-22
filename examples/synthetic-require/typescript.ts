@@ -1,9 +1,8 @@
-import { createModule, PersistManager, Runner } from "@upvotr/node-hmr";
+import { createModule, createRunner } from "@upvotr/node-hmr";
 
 export default createModule(
-  new PersistManager(),
-  new Runner(() => {
+  null,
+  createRunner(() => {
     return () => console.log("Running from a TypeScript Module!" as string);
-  }),
-  false
+  })
 );

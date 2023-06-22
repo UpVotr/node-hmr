@@ -1,7 +1,6 @@
-const { createModule, PersistManager, Runner } = require("@upvotr/node-hmr");
+const { hmr, createRunner } = require("@upvotr/node-hmr");
 
-module.exports = createModule(
-  new PersistManager(),
-  new Runner(() => ({ bar: () => console.log("bar") })),
-  false
+module.exports = hmr(
+  null,
+  createRunner(() => ({ bar: () => console.log("bar") }))
 );

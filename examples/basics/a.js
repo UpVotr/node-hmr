@@ -1,19 +1,18 @@
 const {
-  createModule,
-  PersistManager,
-  AsyncRunner,
-  HMRRuntime,
-  FSWatcher
+  hmr,
+  createPersist,
+  createRunner,
+  createRuntime
 } = require("@upvotr/node-hmr");
 
-module.exports = createModule(
-  new PersistManager(
+module.exports = hmr(
+  createPersist(
     () => ({
-      runtime: new HMRRuntime(new FSWatcher(require), require)
+      runtime: createRuntime(require)
     }),
     ({ runtime }) => runtime.closeAll()
   ),
-  new AsyncRunner(
+  createRunner(
     async ({ runtime }, emitUpdate) => {
       // Import the module with a mutating `exports` property
       const b = await runtime.import("./b.js");
@@ -32,8 +31,8 @@ module.exports = createModule(
       };
     },
     // Stop watching the file on cleanup, in case we are not importing it on the next run.
-    ({ runtime }) => runtime.unimport("./b.js")
-  ),
-  // Do not update persistient values
-  false
+    ({ runtime }) => runtime.unimport("./b.js"),
+    // Mark as AsyncRunner
+    true
+  )
 );
