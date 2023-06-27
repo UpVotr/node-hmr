@@ -1,7 +1,7 @@
 {
   "name": "@upvotr/node-hmr",
   "version": "3.0.1",
-  "description": "Hot module reloading for node.js with persistient values",
+  "description": "Hot module reloading for node.js with persistent values",
   "main": "./build/commonjs/index.js",
   "exports": {
     "require": "./build/commonjs/index.js",
@@ -32,5 +32,15 @@
   },
   "bin": {
     "hmr": "build/commonjs/bin/hmr.js"
-  }
+  },
+  "keywords": [
+    "node",
+    "hmr",
+    "hot",
+    "module",
+    "reloading",
+    "presist",
+    "persistent",
+    "async"
+  ]
 }
