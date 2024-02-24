@@ -8,7 +8,16 @@ export class HMRRuntime extends EventEmitter {
   static get HMRRuntime() {
     return HMRRuntime;
   }
-  private static _moduleCache: Record<string, any> = Object.create(null);
+  private static _cache: Record<string, any> = Object.create(null);
+  private static _persistientCache: Record<string, any> = Object.create(null);
+  private static _exportCache: Record<string, { exports: any }> =
+    Object.create(null);
+  private static _moduleCache: Record<string, HotModule<any, any>> =
+    Object.create(null);
+  private static _unwatchCache: Record<string, () => void> =
+    Object.create(null);
+  private static _listenerCache: Record<string, (id: string) => void> = Object.create(null);
+  private static _invalidatedModules: Set<string> = new Set();
 
   private _cache: Record<string, any>;
 
@@ -24,13 +33,13 @@ export class HMRRuntime extends EventEmitter {
     private _requireFn: NodeJS.Require
   ) {
     super();
-    this._cache = HMRRuntime._moduleCache;
-    this.persistentCache = Object.create(null);
-    this.exportCache = Object.create(null);
-    this.moduleCache = Object.create(null);
-    this.unwatchCache = Object.create(null);
-    this.listenerCache = Object.create(null);
-    this.invalidatedModules = new Set();
+    this._cache = HMRRuntime._cache;
+    this.persistentCache = HMRRuntime._persistientCache;
+    this.exportCache = HMRRuntime._exportCache;
+    this.moduleCache = HMRRuntime._moduleCache;
+    this.unwatchCache = HMRRuntime._unwatchCache;
+    this.listenerCache = HMRRuntime._listenerCache;
+    this.invalidatedModules = HMRRuntime._invalidatedModules;
   }
 
   private invalidateModule(id: string) {
@@ -101,14 +110,14 @@ export class HMRRuntime extends EventEmitter {
 
     if (!(id in this.exportCache)) {
       this.exportCache[id] = {
-        exports: undefined
+        exports: undefined,
       };
     }
 
     try {
       const params = [
         this.persistentCache[id],
-        () => this.emit("update", id)
+        () => this.emit("update", id),
       ] as const;
       let exports: any;
       if (m.runner instanceof AsyncRunner) {
