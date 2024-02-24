@@ -8,6 +8,7 @@ export class HMRRuntime extends EventEmitter {
   static get HMRRuntime() {
     return HMRRuntime;
   }
+  private static _moduleCache: Record<string, any> = Object.create(null);
 
   private _cache: Record<string, any>;
 
@@ -23,7 +24,7 @@ export class HMRRuntime extends EventEmitter {
     private _requireFn: NodeJS.Require
   ) {
     super();
-    this._cache = Object.create(null);
+    this._cache = HMRRuntime._moduleCache;
     this.persistentCache = Object.create(null);
     this.exportCache = Object.create(null);
     this.moduleCache = Object.create(null);
